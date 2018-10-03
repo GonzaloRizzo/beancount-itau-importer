@@ -9,6 +9,7 @@ from beancount.core.number import D
 from beancount.core.getters import get_all_payees
 
 from .utils import pdf_parser
+from .utils.iva_discount_merger import merge_iva_discounts
 
 
 class CreditCardPDFImporter(ImporterProtocol):
@@ -67,6 +68,7 @@ class CreditCardPDFImporter(ImporterProtocol):
 
             transactions.append(txn)
 
+        merge_iva_discounts(transactions)
         return transactions
 
 
