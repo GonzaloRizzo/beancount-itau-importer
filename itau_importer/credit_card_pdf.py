@@ -36,7 +36,7 @@ class CreditCardPDFImporter(ImporterProtocol):
         return True
 
     def extract(self, file, existing_entries):
-        payees = get_all_payees(existing_entries)
+        payees = get_all_payees(existing_entries or [])
         parsed_entries = file.convert(pdf_parser.credit_card_parser)
 
         transactions = []
