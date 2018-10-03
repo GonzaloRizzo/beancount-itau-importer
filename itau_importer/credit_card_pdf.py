@@ -14,8 +14,11 @@ from .utils import pdf_parser
 class CreditCardPDFImporter(ImporterProtocol):
     """Itau's Credit Card PDF Importer"""
 
-    def __init__(self, base_account):
-        self.base_account = base_account
+    def __init__(self, account_uyu, account_usd):
+        self.account = {
+            'USD': account_usd,
+            'UYU': account_uyu,
+        }
 
     def name(self):
         return self.__class__.__name__
@@ -46,8 +49,9 @@ class CreditCardPDFImporter(ImporterProtocol):
             txn_units, txn_price = infer_amount(entry['amount_origin'],
                                                 entry['amount_uyu'],
                                                 entry['amount_usd'])
+            meta = new_metadata(file.name, 0)
             txn = Transaction(
-                meta=new_metadata(file.name, 0),
+                meta=meta,
                 date=datetime.strptime(entry['date'], '%Y-%m-%d').date(),
                 flag=flags.FLAG_OKAY,
                 tags=set(),
@@ -56,8 +60,8 @@ class CreditCardPDFImporter(ImporterProtocol):
                 postings=[
                     Posting(txn_expense_account, txn_units, None, txn_price,
                             flags.FLAG_WARNING, None),
-                    Posting(f'{self.base_account}:{txn_units.currency}', None,
-                            None, None, None, None),
+                    Posting(self.account[txn_units.currency], None, None, None,
+                            None, None),
                 ],
                 narration=entry['description'] if not infered_payee else '')
 
