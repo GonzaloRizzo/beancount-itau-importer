@@ -2,6 +2,7 @@ from beancount.core.convert import get_weight
 
 from beancount.core import flags
 from beancount.core.data import Posting
+from beancount.core.amount import abs as amount_abs
 
 IVA_DISCOUNT_TOKEN = 'REDUC. IVA LEY 17934'
 TOLERANCE = 0.005
@@ -76,6 +77,6 @@ def merge_iva_discounts(transactions):
         discount_amount = iva_discount_txn.postings[0].units
         parent.postings.insert(
             -1,
-            Posting('Income:Rediva', -discount_amount, None, None,
+            Posting('Income:Rediva', -amount_abs(discount_amount), None, None,
                     flags.FLAG_WARNING, iva_discount_meta),
         )
