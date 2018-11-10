@@ -1,30 +1,21 @@
-#!/usr/bin/env python3
 from datetime import datetime
 
-from beancount.ingest.importer import ImporterProtocol
-
-from beancount.core import flags
-from beancount.core.data import Transaction, Posting, Amount, new_metadata
+from beancount.core.data import Amount
 from beancount.core.number import D
-from beancount.core.getters import get_all_payees
 
+from .core.mixins import InferPayeeMixin, MergeIvaDiscountMixin
+from .core.natural_importer import NaturalImporter
+from .core.natural_transaction import NaturalTransaction
 from .utils import pdf_parser
-from .utils.iva_discount_merger import merge_iva_discounts
 
 
-class CreditCardPDFImporter(ImporterProtocol):
-    """Itau's Credit Card PDF Importer"""
-
+class CreditCardPDFImporter(InferPayeeMixin, MergeIvaDiscountMixin,
+                            NaturalImporter):
     def __init__(self, account_uyu, account_usd):
         self.account = {
             'USD': account_usd,
             'UYU': account_uyu,
         }
-
-    def name(self):
-        return self.__class__.__name__
-
-    __str__ = name
 
     def identify(self, file):
         if file.mimetype() != 'application/pdf':
@@ -36,69 +27,55 @@ class CreditCardPDFImporter(ImporterProtocol):
 
         return True
 
-    def extract(self, file, existing_entries):
-        payees = get_all_payees(existing_entries or [])
+    def get_debited_amount(self, parsed_transaction):
+        [amount_origin, amount_uyu, amount_usd] = [
+            parsed_transaction[x]
+            for x in ['amount_origin', 'amount_uyu', 'amount_usd']
+        ]
+        return infer_amount(amount_origin, amount_uyu, amount_usd)[0]
+
+    def get_amount(self, parsed_transaction):
+        [amount_origin, amount_uyu, amount_usd] = [
+            parsed_transaction[x]
+            for x in ['amount_origin', 'amount_uyu', 'amount_usd']
+        ]
+
+        [amount, origin] = infer_amount(amount_origin, amount_uyu, amount_usd)
+
+        return origin or amount
+
+    def converter(self, file):
         parsed_entries = file.convert(pdf_parser.credit_card_parser)
-
-        transactions = []
-        for entry in parsed_entries:
-            if entry.get('is_card_payment', False):
-                continue
-
-            infered_payee = infer_payee(payees, entry['description'])
-            txn_expense_account = 'Expenses:Unknown'
-            txn_units, txn_price = infer_amount(entry['amount_origin'],
-                                                entry['amount_uyu'],
-                                                entry['amount_usd'])
-            meta = new_metadata(file.name, 0)
-            txn = Transaction(
-                meta=meta,
-                date=datetime.strptime(entry['date'], '%Y-%m-%d').date(),
-                flag=flags.FLAG_OKAY,
-                tags=set(),
-                payee=infered_payee,
-                links=set(),
-                postings=[
-                    Posting(txn_expense_account, txn_units, None, txn_price,
-                            flags.FLAG_WARNING, None),
-                    Posting(self.account[txn_units.currency], None, None, None,
-                            None, None),
-                ],
-                narration=entry['description'] if not infered_payee else '')
-
-            transactions.append(txn)
-
-        merge_iva_discounts(transactions)
-        return transactions
+        return [
+            NaturalTransaction(
+                date=datetime.strptime(t['date'], '%Y-%m-%d').date(),
+                description=t['description'],
+                payee=None,
+                amount=self.get_amount(t),
+                debited_amount=self.get_debited_amount(t),
+                account=None,
+                debited_account="Assets:Itau") for t in parsed_entries
+            if not t['is_card_payment']
+        ]
 
 
-def infer_payee(payees, description):
-    payees = list(payee for payee in payees
-                  if payee.lower().replace(' ', '') in description.replace(
-                      ' ', '').lower())
-    if len(payees) == 0:
-        return None
-    return sorted(payees, key=len, reverse=True)[0]
+def parse_number(number):
+    return D(str(number)).quantize(D('0.00'))
 
 
-def infer_amount(origin_amount, amount_uyu, amount_usd):
-    if not (bool(amount_usd) ^ bool(amount_uyu)):
+def infer_amount(amount_origin, amount_uyu, amount_usd):
+    if not ((amount_usd is None) ^ (amount_uyu is None)):
         raise ValueError("Only one of UYU or USD can be provided")
 
     if amount_uyu:
-        amount = amount_uyu
-        currency = 'UYU'
+        amount = Amount(parse_number(amount_uyu), 'UYU')
 
     if amount_usd:
-        amount = amount_usd
-        currency = 'USD'
+        amount = Amount(parse_number(amount_usd), 'USD')
 
-    price = None
+    origin = None
 
-    if origin_amount and abs(origin_amount) != abs(amount):
-        origin_currency = 'UNKNOWN'
-        origin_rate = origin_amount / amount
+    if amount_origin and amount_origin != amount.number:
+        origin = Amount(D(str(amount_origin)), 'UNKNOWN')
 
-        price = Amount(D(origin_rate).quantize(D('0.00')), origin_currency)
-
-    return Amount(D(amount).quantize(D('0.00')), currency), price
+    return amount, origin
