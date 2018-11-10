@@ -1,8 +1,7 @@
-from beancount.core.convert import get_weight
-
 from beancount.core import flags
-from beancount.core.data import Posting
 from beancount.core.amount import abs as amount_abs
+from beancount.core.convert import get_weight
+from beancount.core.data import Posting
 
 IVA_DISCOUNT_TOKEN = 'REDUC. IVA LEY 17934'
 TOLERANCE = 0.005
