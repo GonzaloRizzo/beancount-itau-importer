@@ -76,7 +76,7 @@ def infer_amount(amount_origin, amount_uyu, amount_usd):
 
     origin = None
 
-    if amount_origin and amount_origin != amount.number:
+    if amount_origin and amount_origin != float(amount.number):
         origin = Amount(D(str(amount_origin)), 'UNKNOWN')
 
     return amount, origin
