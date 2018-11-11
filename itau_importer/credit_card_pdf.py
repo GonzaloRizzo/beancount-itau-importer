@@ -54,7 +54,8 @@ class CreditCardPDFImporter(InferPayeeMixin, MergeIvaDiscountMixin,
                 amount=self.get_amount(t),
                 debited_amount=self.get_debited_amount(t),
                 account=None,
-                debited_account="Assets:Itau") for t in parsed_entries
+                debited_account=self.account[self.get_debited_amount(t).
+                                             currency]) for t in parsed_entries
             if not t['is_card_payment']
         ]
 
