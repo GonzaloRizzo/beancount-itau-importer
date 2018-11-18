@@ -6,6 +6,8 @@ from beancount.core.amount import div as amount_div
 from beancount.core.data import Amount, Posting, Transaction
 from beancount.core.flags import FLAG_OKAY, FLAG_WARNING
 
+from beancount.parser.printer import format_entry
+
 
 @dataclass
 class NaturalTransaction:
@@ -55,3 +57,6 @@ class NaturalTransaction:
                 credit_posting,
                 debit_posting,
             ])
+
+    def render(self):
+        return format_entry(self.parse())
