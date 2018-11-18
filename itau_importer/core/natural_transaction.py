@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Optional
 
 from beancount.core.amount import div as amount_div
 from beancount.core.data import Amount, Posting, Transaction
@@ -9,16 +10,20 @@ from beancount.core.flags import FLAG_OKAY, FLAG_WARNING
 @dataclass
 class NaturalTransaction:
     date: datetime
-    description: str
-    payee: str
     amount: Amount
-    account: str
-    debited_amount: Amount
     debited_account: str
+    account: Optional[str] = 'Expenses:Unknown'
+    description: Optional[str] = None
+    payee: Optional[str] = None
+    debited_amount: Optional[Amount] = None
 
-    def parse(self, meta: dict) -> Transaction:
+    def __post_init__(self):
+        if not self.debited_amount:
+            self.debited_amount = self.amount
+
+    def parse(self, meta: Optional[dict] = None) -> Transaction:
         credit_posting = Posting(
-            account=self.account or 'Expenses:Unknown',
+            account=self.account,
             units=self.amount,
             cost=None,
             price=amount_div(self.debited_amount, self.amount.number)
