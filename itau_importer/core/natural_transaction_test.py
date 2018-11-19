@@ -4,7 +4,7 @@ import textwrap
 from datetime import date
 from beancount.core.amount import A
 
-from .natural_transaction import NaturalTransaction
+from .natural_transaction import NaturalTransaction, Detail
 
 
 def normalize_entry(entry):
@@ -77,6 +77,86 @@ class NaturalTransactionTest(unittest.TestCase):
         self.transaction.payee = "Payee"
         self.transaction.description = "Description"
         self.transaction.debited_amount = A('5 ARS')
+        self.assertEqual(
+            normalize_entry(target),
+            normalize_entry(self.transaction.render()),
+        )
+
+    def test_renders_details_with_whole_amount_detailed(self):
+        target = textwrap.dedent("""
+            2012-12-12 * "Payee" "Description"
+              Expenses:Unknown    2 UYU
+              Expenses:Unknown    3 UYU
+              Expenses:Unknown    5 UYU
+              Assets:Cash       -10 UYU
+        """)
+        self.transaction.payee = "Payee"
+        self.transaction.description = "Description"
+        self.transaction.details = [
+            Detail(A('2 UYU')),
+            Detail(A('3 UYU')),
+            Detail(A('5 UYU')),
+        ]
+        self.assertEqual(
+            normalize_entry(target),
+            normalize_entry(self.transaction.render()),
+        )
+
+    def test_renders_details_with_partial_detailing(self):
+        target = textwrap.dedent("""
+            2012-12-12 * "Payee" "Description"
+              Expenses:Unknown    2 UYU
+              Expenses:Unknown    8 UYU
+              Assets:Cash       -10 UYU
+        """)
+        self.transaction.payee = "Payee"
+        self.transaction.description = "Description"
+        self.transaction.details = [
+            Detail(A('2 UYU')),
+        ]
+        self.assertEqual(
+            normalize_entry(target),
+            normalize_entry(self.transaction.render()),
+        )
+
+    def test_renders_details_with_descriptions(self):
+        target = textwrap.dedent("""
+                2012-12-12 * "Payee" "Description"
+                  Expenses:Unknown    1 UYU
+                    desc: "Item 1"
+                  Expenses:Unknown    3 UYU
+                    desc: "Item 2"
+                  Expenses:Unknown    4 UYU
+                  Expenses:Unknown    2 UYU
+                  Assets:Cash       -10 UYU
+            """)
+        self.transaction.payee = "Payee"
+        self.transaction.description = "Description"
+        self.transaction.details = [
+            Detail(A('1 UYU'), "Item 1"),
+            Detail(A('3 UYU'), "Item 2"),
+            Detail(A('4 UYU')),
+        ]
+        self.assertEqual(
+            normalize_entry(target),
+            normalize_entry(self.transaction.render()),
+        )
+
+    def test_renders_details_with_custom_account(self):
+        target = textwrap.dedent("""
+            2012-12-12 * "Payee" "Description"
+              Liabilities:Debtor    2 UYU
+              Liabilities:Debtor    3 UYU
+                desc: "Eter"
+              Expenses:Unknown      5 UYU
+              Assets:Cash         -10 UYU
+        """)
+        self.transaction.payee = "Payee"
+        self.transaction.description = "Description"
+        self.transaction.details = [
+            Detail(A('2 UYU'), account="Liabilities:Debtor"),
+            Detail(A('3 UYU'), "Eter", "Liabilities:Debtor"),
+        ]
         self.assertEqual(
             normalize_entry(target),
             normalize_entry(self.transaction.render()),
