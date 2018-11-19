@@ -4,7 +4,7 @@ from typing import Optional
 
 from beancount.core.amount import div as amount_div
 from beancount.core.data import Amount, Posting, Transaction
-from beancount.core.flags import FLAG_OKAY, FLAG_WARNING
+from beancount.core.flags import FLAG_OKAY
 
 from beancount.parser.printer import format_entry
 
@@ -31,7 +31,7 @@ class NaturalTransaction:
             price=amount_div(self.debited_amount, self.amount.number)
             if self.debited_amount
             and self.debited_amount.currency != self.amount.currency else None,
-            flag=FLAG_WARNING,
+            flag=None,
             meta=None,
         )
 

@@ -23,7 +23,7 @@ class NaturalTransactionTest(unittest.TestCase):
 
         target = textwrap.dedent("""
             2012-12-12 *
-              ! Expenses:Unknown  10 UYU
+              Expenses:Unknown  10 UYU
               Assets:Cash
         """)
         self.assertEqual(
@@ -34,7 +34,7 @@ class NaturalTransactionTest(unittest.TestCase):
     def test_renders_with_descriptions(self):
         target = textwrap.dedent("""
             2012-12-12 * "Description"
-              ! Expenses:Unknown  10 UYU
+              Expenses:Unknown  10 UYU
               Assets:Cash
         """)
         self.transaction.description = "Description"
@@ -46,7 +46,7 @@ class NaturalTransactionTest(unittest.TestCase):
     def test_renders_with_payee(self):
         target = textwrap.dedent("""
             2012-12-12 * "Payee" ""
-              ! Expenses:Unknown  10 UYU
+              Expenses:Unknown  10 UYU
               Assets:Cash
         """)
         self.transaction.payee = "Payee"
@@ -58,7 +58,7 @@ class NaturalTransactionTest(unittest.TestCase):
     def test_renders_with_descriptions_and_payee(self):
         target = textwrap.dedent("""
             2012-12-12 * "Payee" "Description"
-              ! Expenses:Unknown  10 UYU
+              Expenses:Unknown  10 UYU
               Assets:Cash
         """)
         self.transaction.payee = "Payee"
@@ -71,8 +71,8 @@ class NaturalTransactionTest(unittest.TestCase):
     def test_renders_conversions(self):
         target = textwrap.dedent("""
             2012-12-12 * "Payee" "Description"
-              ! Expenses:Unknown  10 UYU @ 0.5 ARS
-              Assets:Cash         -5 ARS
+              Expenses:Unknown  10 UYU @ 0.5 ARS
+              Assets:Cash       -5 ARS
         """)
         self.transaction.payee = "Payee"
         self.transaction.description = "Description"
