@@ -71,8 +71,8 @@ class NaturalTransactionTest(unittest.TestCase):
     def test_renders_conversions(self):
         target = textwrap.dedent("""
             2012-12-12 * "Payee" "Description"
-              Expenses:Unknown  10 UYU @ 0.5 ARS
-              Assets:Cash       -5 ARS
+              Expenses:Unknown  10 UYU
+              Assets:Cash       -5 ARS @ 2 UYU
         """)
         self.transaction.payee = "Payee"
         self.transaction.description = "Description"

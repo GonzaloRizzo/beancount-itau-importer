@@ -28,19 +28,22 @@ class NaturalTransaction:
             account=self.account,
             units=self.amount,
             cost=None,
-            price=amount_div(self.debited_amount, self.amount.number)
-            if self.debited_amount
-            and self.debited_amount.currency != self.amount.currency else None,
+            price=None,
             flag=None,
             meta=None,
         )
 
+        debit_price = (amount_div(self.amount, self.debited_amount.number)
+                       if self.debited_amount
+                       and self.debited_amount.currency != self.amount.currency
+                       else None)
+
         debit_posting = Posting(
             account=self.debited_account,
-            units=-self.debited_amount
-            if self.debited_amount != self.amount else None,
+            units=(-self.debited_amount
+                   if self.debited_amount != self.amount else None),
             cost=None,
-            price=None,
+            price=debit_price,
             flag=None,
             meta=None,
         )
