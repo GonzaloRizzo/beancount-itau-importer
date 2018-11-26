@@ -161,3 +161,21 @@ class NaturalTransactionTest(unittest.TestCase):
             normalize_entry(target),
             normalize_entry(self.transaction.render()),
         )
+
+    def test_renders_details_with_extra_flag(self):
+        target = textwrap.dedent("""
+            2012-12-12 * "Payee" "Description"
+              Expenses:Unknown   10 UYU
+              Assets:Cash       -10 UYU
+              Income:Discount    -2 UYU
+              Assets:Cash         2 UYU
+        """)
+        self.transaction.payee = "Payee"
+        self.transaction.description = "Description"
+        self.transaction.details = [
+            Detail(A('-2 UYU'), extra=True, account="Income:Discount"),
+        ]
+        self.assertEqual(
+            normalize_entry(target),
+            normalize_entry(self.transaction.render()),
+        )

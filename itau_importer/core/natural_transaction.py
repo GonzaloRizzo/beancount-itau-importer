@@ -16,12 +16,30 @@ from beancount.core.number import D
 from beancount.parser.printer import format_entry
 
 
+def sum_postings(amounts, currency):
+    return reduce(
+        amount_add,
+        [p.units for p in amounts],
+        Amount(D(0), currency),
+    )
+
+
 @dataclass
 class Detail:
     amount: Amount
     description: Optional[str] = None
     account: Optional[str] = None
     extra: bool = False
+
+    def as_posting(self, default_account=None):
+        return Posting(
+            account=self.account or default_account,
+            units=self.amount,
+            cost=None,
+            price=None,
+            flag=None,
+            meta={'desc': self.description} if self.description else None,
+        )
 
 
 @dataclass
@@ -39,51 +57,52 @@ class NaturalTransaction:
         if not self.debited_amount:
             self.debited_amount = self.amount
 
-    def get_detailed_postings(self):
-        return [
-            Posting(
-                account=d.account or self.account,
-                units=d.amount,
-                cost=None,
-                price=None,
-                flag=None,
-                meta={'desc': d.description} if d.description else None,
-            ) for d in self.details if not d.extra
+    def parse(self, meta: Optional[dict] = None) -> Transaction:
+
+        detailed_postings = [
+            d.as_posting(default_account=self.account) for d in self.details
+            if not d.extra
         ]
 
-    def parse(self, meta: Optional[dict] = None) -> Transaction:
-        main_posting = Posting(
+        main = Posting(
             account=self.account,
-            units=self.amount,
+            units=amount_sub(
+                self.amount,
+                sum_postings(detailed_postings, self.amount.currency)),
             cost=None,
             price=None,
             flag=None,
             meta=None,
         )
 
-        detailed_postings = self.get_detailed_postings()
-        detailed_amount = reduce(amount_add,
-                                 [p.units for p in detailed_postings],
-                                 Amount(D(0), self.amount.currency))
-
-        main_posting = main_posting._replace(
-            units=amount_sub(main_posting.units, detailed_amount))
-
-        debit_price = (amount_div(self.amount, self.debited_amount.number)
-                       if self.debited_amount
-                       and self.debited_amount.currency != self.amount.currency
-                       else None)
-
-        debit_posting = Posting(
+        debit = Posting(
             account=self.debited_account,
             units=(-self.debited_amount if
                    (self.debited_amount != self.amount
-                    or len(detailed_postings) > 0) else None),
+                    or len(self.details) > 0) else None),
             cost=None,
-            price=debit_price,
+            price=(amount_div(self.amount, self.debited_amount.number)
+                   if self.debited_amount.currency != self.amount.currency else
+                   None),
             flag=None,
             meta=None,
         )
+
+        extra_postings = [
+            d.as_posting(default_account=self.account) for d in self.details
+            if d.extra
+        ]
+
+        if len(extra_postings) > 0:
+            extra_postings.append(
+                Posting(
+                    account=self.debited_account,
+                    units=-sum_postings(extra_postings, self.amount.currency),
+                    cost=None,
+                    price=None,
+                    flag=None,
+                    meta=None,
+                ))
 
         return Transaction(
             meta=meta or dict(),
@@ -96,8 +115,9 @@ class NaturalTransaction:
             postings=[
                 p for p in [
                     *detailed_postings,
-                    main_posting if main_posting.units.number != 0 else None,
-                    debit_posting,
+                    main if main.units.number != 0 else None,
+                    debit,
+                    *extra_postings,
                 ] if p is not None
             ])
 
