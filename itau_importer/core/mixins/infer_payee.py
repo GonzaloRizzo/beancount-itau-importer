@@ -30,6 +30,8 @@ class InferPayeeMixin:
             natural_transactions: List[NaturalTransaction],
             existing_entries: Entries,
     ):
+        natural_transactions = super().pre_parse(natural_transactions,
+                                                 existing_entries)
         if not existing_entries:
             return
 
@@ -43,3 +45,4 @@ class InferPayeeMixin:
             if infered_payee:
                 natural_transaction.payee = infered_payee
                 natural_transaction.description = ''
+        return natural_transactions

@@ -30,15 +30,23 @@ class Detail:
     description: Optional[str] = None
     account: Optional[str] = None
     extra: bool = False
+    meta: Optional[dict] = None
+
+    def __post_init__(self):
+        if not self.meta:
+            self.meta = {}
 
     def as_posting(self, default_account=None):
+        if self.description:
+            self.meta['desc'] = self.description
+
         return Posting(
             account=self.account or default_account,
             units=self.amount,
             cost=None,
             price=None,
             flag=None,
-            meta={'desc': self.description} if self.description else None,
+            meta=self.meta,
         )
 
 

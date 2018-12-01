@@ -15,11 +15,12 @@ class NaturalImporter(ImporterProtocol):
             natural_transactions: List[NaturalTransaction],
             existing_entries: Entries,
     ):
-        pass
+        return natural_transactions
 
     def extract(self, file, existing_entries):
         natural_transactions = self.converter(file)
-        self.pre_parse(natural_transactions, existing_entries)
+        natural_transactions = self.pre_parse(natural_transactions,
+                                              existing_entries)
 
         return [
             natural_transaction.parse(new_metadata(file, 0))
