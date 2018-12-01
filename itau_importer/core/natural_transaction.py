@@ -55,7 +55,7 @@ class NaturalTransaction:
     date: datetime
     amount: Amount
     debited_account: str
-    account: Optional[str] = 'Expenses:Unknown'
+    account: str = 'Expenses:Unknown'
     description: Optional[str] = None
     payee: Optional[str] = None
     debited_amount: Optional[Amount] = None
