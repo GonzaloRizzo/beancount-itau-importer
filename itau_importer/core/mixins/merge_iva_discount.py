@@ -1,7 +1,7 @@
 import re
 from typing import List
 
-from beancount.core.data import Entries, D
+from beancount.core.data import D
 from ..natural_transaction import NaturalTransaction, Detail
 
 IVA_DISCOUNT_EXP = r'REDUC\. IVA LEY 17934'
@@ -51,7 +51,7 @@ class MergeIvaDiscountMixin:
     def pre_parse(
             self,
             natural_transactions: List[NaturalTransaction],
-            existing_entries: Entries,
+            existing_entries: List[any],
     ):
         natural_transactions = super().pre_parse(natural_transactions,
                                                  existing_entries)

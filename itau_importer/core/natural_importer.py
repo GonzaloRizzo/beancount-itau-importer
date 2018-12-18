@@ -1,6 +1,6 @@
 from typing import List
 
-from beancount.core.data import Entries, new_metadata
+from beancount.core.data import new_metadata
 from beancount.ingest.importer import ImporterProtocol
 
 from .natural_transaction import NaturalTransaction
@@ -13,7 +13,7 @@ class NaturalImporter(ImporterProtocol):
     def pre_parse(
             self,
             natural_transactions: List[NaturalTransaction],
-            existing_entries: Entries,
+            existing_entries: List[any],
     ):
         return natural_transactions
 

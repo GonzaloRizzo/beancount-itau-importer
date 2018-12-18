@@ -1,6 +1,5 @@
 from typing import List
 
-from beancount.core.data import Entries
 from beancount.core.getters import get_all_payees
 
 from ..natural_transaction import NaturalTransaction
@@ -28,12 +27,12 @@ class InferPayeeMixin:
     def pre_parse(
             self,
             natural_transactions: List[NaturalTransaction],
-            existing_entries: Entries,
+            existing_entries: List[any],
     ):
         natural_transactions = super().pre_parse(natural_transactions,
                                                  existing_entries)
         if not existing_entries:
-            return
+            return natural_transactions
 
         payees = get_all_payees(existing_entries or [])
 
