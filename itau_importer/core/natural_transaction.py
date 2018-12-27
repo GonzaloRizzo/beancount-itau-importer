@@ -110,7 +110,8 @@ class NaturalTransaction:
             extra_postings.append(
                 Posting(
                     account=self.debited_account,
-                    units=-sum_postings(extra_postings, self.amount.currency),
+                    units=-sum_postings(extra_postings,
+                                        self.debited_amount.currency),
                     cost=None,
                     price=None,
                     flag=None,
