@@ -9,7 +9,7 @@ from beancount.core.amount import (
     sub as amount_sub,
 )
 
-from beancount.core.data import Amount, Posting, Transaction
+from beancount.core.data import Amount, Posting, Transaction, Meta
 from beancount.core.flags import FLAG_OKAY
 from beancount.core.number import D
 
@@ -60,12 +60,17 @@ class NaturalTransaction:
     payee: Optional[str] = None
     debited_amount: Optional[Amount] = None
     details: List[Detail] = field(default_factory=list)
+    meta: Optional[Meta] = None
 
     def __post_init__(self):
         if not self.debited_amount:
             self.debited_amount = self.amount
+        if not self.meta:
+            self.meta = dict()
 
     def parse(self, meta: Optional[dict] = None) -> Transaction:
+        if not meta:
+            meta = dict()
 
         detailed_postings = [
             d.as_posting(default_account=self.account) for d in self.details
@@ -113,7 +118,13 @@ class NaturalTransaction:
                 ))
 
         return Transaction(
-            meta=meta or dict(),
+            meta={
+                **meta,
+                **{
+                    k: v
+                    for (k, v) in self.meta.items() if not k.startswith('_')
+                }
+            },
             date=self.date,
             flag=FLAG_OKAY,
             tags=set(),
