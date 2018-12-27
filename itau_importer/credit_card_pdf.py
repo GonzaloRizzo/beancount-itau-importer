@@ -3,7 +3,7 @@ from datetime import datetime
 from beancount.core.data import Amount
 from beancount.core.number import D
 
-from .core.mixins import InferPayeeMixin, MergeIvaDiscountMixin
+from .core.mixins import InferPayeeMixin, MergeIvaDiscountMixin, AttachInternationalTaxMixin
 from .core.natural_importer import NaturalImporter
 from .core.natural_transaction import NaturalTransaction
 from .utils import pdf_parser
@@ -31,8 +31,12 @@ def infer_amounts(amount_origin, amount_uyu, amount_usd):
     return amount, origin
 
 
-class CreditCardPDFImporter(InferPayeeMixin, MergeIvaDiscountMixin,
-                            NaturalImporter):
+class CreditCardPDFImporter(
+        InferPayeeMixin,
+        MergeIvaDiscountMixin,
+        AttachInternationalTaxMixin,
+        NaturalImporter,
+):
     def __init__(self, account_uyu, account_usd):
         self.account = {
             'USD': account_usd,
@@ -66,4 +70,4 @@ class CreditCardPDFImporter(InferPayeeMixin, MergeIvaDiscountMixin,
             debited_account=self.account[debited_amount.currency],
             description=entry['description'],
             debited_amount=debited_amount,
-        )
+            meta={'_is_international': entry['amount_origin'] is not None})
